@@ -29,7 +29,7 @@
     [head :- EPVPattern
      body :- [EPVPattern]
      name :- s/Str
-     downstream :- [s/Str]])
+     downstream :- [[s/Str EPVPattern]]])
 
 (defn new-rule
   ([head body name]

@@ -23,16 +23,16 @@
 
 (deftest build-program
   (let [program (r/create-program rules)]
-    ; (println "PROGRAM:")
-    ; (pprint program)
+     (println "PROGRAM:")
+     (pprint program)
     (is (= (count rules) (count program)))
-    (is (unord= (get-in program ["shared-parent" :downstream])
+    (is (unord= (map first (get-in program ["shared-parent" :downstream]))
                 ["shared-parent" "uncle"]))
-    (is (unord= (get-in program ["sibling->brother" :downstream])
+    (is (unord= (map first (get-in program ["sibling->brother" :downstream]))
                 ["uncle"]))
-    (is (unord= (get-in program ["uncle" :downstream])
+    (is (unord= (map first (get-in program ["uncle" :downstream]))
                 []))
-    (is (unord= (get-in program ["male-father" :downstream])
+    (is (unord= (map first (get-in program ["male-father" :downstream]))
                 ["sibling->brother"]))
-    (is (unord= (get-in program ["parent-father" :downstream])
+    (is (unord= (map first (get-in program ["parent-father" :downstream]))
                 ["shared-parent" "uncle"]))))

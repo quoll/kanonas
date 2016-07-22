@@ -6,7 +6,7 @@
   (:import [clojure.lang Symbol]
            [kanonas.structs Rule]))
 
-(defn gen-rule-name [] (gensym "rule-"))
+(defn- gen-rule-name [] (gensym "rule-"))
 
 (s/defn rule :- Rule
   "Creates a new rule"
@@ -70,15 +70,14 @@
             (if (match? a b) [nm b]))]
     (keep matches? sb)))
 
+(defn dbg [x] (println x) x)
+
 (defn create-program
   "Converts a sequence of rules into a program.
    A program consists of a map of rule names to rules, where the rules have dependencies."
   [rules]
   (let [name-bodies (u/mapmap :name :body rules)
-        triggers (fn [head]
-                   (->> name-bodies
-                        (mapcat (partial find-matches head))
-                        (map first)))
+        triggers (fn [head] (mapcat (partial find-matches head) name-bodies))
         deps (fn [{:keys [head body name]}]
                (st/new-rule head body name (triggers head)))]
     (u/mapmap :name (map deps rules))))
