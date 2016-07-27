@@ -1,7 +1,10 @@
 (ns kanonas.test-rules
   (:require [kanonas.rules :as r :refer [r]]
+            [schema.test :as st]
             [clojure.test :refer :all]
             [clojure.pprint :refer [pprint]]))
+
+(use-fixtures :once st/validate-schemas)
 
 (def rules
   [(r "shared-parent" [?b :parent ?c] :- [?a :sibling ?b] [?a :parent ?c])

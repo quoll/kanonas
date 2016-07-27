@@ -22,14 +22,19 @@
 (def EPVPattern
   (s/if #(= 1 (count %)) EntityPattern EntityPropertyPattern))
 
+(def RulePatternPair [(s/one s/Str "rule-name")
+                      (s/one EPVPattern "pattern")])
+
+(def Body [EPVPattern])
+
 ;; Rules defined by a horn clause. The head is a simple pattern,
 ;; the body is conjunction of pattern matches.
 ;; All rules have a name, and a list of names of downstream rules.
 (s/defrecord Rule
     [head :- EPVPattern
-     body :- [EPVPattern]
+     body :- Body
      name :- s/Str
-     downstream :- [[s/Str EPVPattern]]])
+     downstream :- [RulePatternPair]])
 
 (defn new-rule
   ([head body name]

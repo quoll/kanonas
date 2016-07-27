@@ -1,7 +1,7 @@
 (ns kanonas.rules
   "Defines rule structures and constructors to keep them consistent"
   (:require [schema.core :as s]
-            [kanonas.structs :as st]
+            [kanonas.structs :as st :refer [EPVPattern RulePatternPair Body]]
             [kanonas.util :as u])
   (:import [clojure.lang Symbol]
            [kanonas.structs Rule]))
@@ -57,25 +57,54 @@
   (compatible [x y]
     (or (= x y) (and (symbol? y) (check-symbol y)))))
 
-(defn match?
+(s/defn match? :- s/Bool
   "Does pattern a match pattern b?"
-  [a b]
+  [a :- EPVPattern, b :- EPVPattern]
   (every? identity (map compatible a b)))
 
-(defn find-matches
+(s/defn find-matches :- [RulePatternPair]
   "returns a sequence of name/pattern pairs where a matches a pattern in a named rule"
-  [a [nm sb]]
+  [a :- EPVPattern,
+   [nm sb] :- [(s/one s/Str "rule-name") (s/one Body "body")]]
   (letfn [(matches? [b]
             "Return a name/pattern if a matches the pattern in b"
             (if (match? a b) [nm b]))]
     (keep matches? sb)))
 
+(def ^:private new-state {:symbol-map {} :cntr 0})
+
+(defn- skolemize-symbol
+  "Used by skolemize to find or create a new symbol to replace any var symbols.
+   element - an element that may contain a symbol. If so, it will be replaced.
+   state - keeps track of symbols replacements.
+   result: the element, or its replacement, and the new state after replacement."
+  [element {:keys [symbol-map cntr] :as state}]
+  (if (and (symbol? element) (= \? (first (name element))))
+    (if-let [mapped-symbol (symbol-map element)]
+      [mapped-symbol state]
+      (let [mapped-symbol (symbol (str "?v" cntr))]
+        [mapped-symbol {:symbol-map (assoc symbol-map element mapped-symbol)
+                        :cntr (inc cntr)}]))
+    [element state]))
+  
+(s/defn skolemize* :- EPVPattern
+  "Skolemize a pattern to use consistent naming"
+  [pattern :- EPVPattern]
+  (->> pattern
+       (reduce (fn [[result-pattern state] elt]
+                 (let [[skol-sym new-state] (skolemize-symbol elt state)]
+                   [(conj result-pattern skol-sym) new-state]))
+               [[] new-state])
+       first))
+
+(def skolemize (memoize skolemize*))
+
 (defn dbg [x] (println x) x)
 
-(defn create-program
+(s/defn create-program :- {s/Str Rule}
   "Converts a sequence of rules into a program.
    A program consists of a map of rule names to rules, where the rules have dependencies."
-  [rules]
+  [rules :- [Rule]]
   (let [name-bodies (u/mapmap :name :body rules)
         triggers (fn [head] (mapcat (partial find-matches head) name-bodies))
         deps (fn [{:keys [head body name]}]
