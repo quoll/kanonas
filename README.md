@@ -2,9 +2,9 @@
 
 A rule engine for Datomic
 
-## Usage
+This project was renamed and moved to Threatgrid, where it is under active development (2018):
 
-Not working yet
+[Naga](https://github.com/threatgrid/naga)
 
 ## License
 
